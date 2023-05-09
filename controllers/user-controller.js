@@ -6,7 +6,7 @@ const userController = {
     User.find()
       .populate({ path: 'friends', select: '-__v' })
       .populate({ path: 'thoughts', select: '-__v' })
-      .then((users) => res.json(users))
+      .then((user) => res.json(user))
       .catch((err) => {
         console.error({ message: err });
         return res.status(500).json(err);
