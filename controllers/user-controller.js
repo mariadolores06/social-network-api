@@ -4,8 +4,8 @@ const userController = {
   // Get ALL users
   getUsers(req, res) {
     User.find()
-      .populate({ path: 'friends', select: '-__v' })
-      .populate({ path: 'thoughts', select: '-__v' })
+      .populate({ path: 'friends', select: '-__v -_id -thoughts' })
+      .populate({ path: 'thoughts', select: '-__v -_id' })
       .then((user) => res.json(user))
       .catch((err) => {
         console.error({ message: err });
@@ -15,8 +15,8 @@ const userController = {
 // Get a single user
   getSingleUser(req, res) {
     User.findOne({ _id: req.params.userId })
-      .populate({ path: 'friends', select: '-__v' })
-      .populate({ path: 'thoughts', select: '-__v' })
+      .populate({ path: 'friends', select: '-__v -_id -thoughts' })
+      .populate({ path: 'thoughts', select: '-__v -_id' })
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with that ID' })
@@ -34,7 +34,8 @@ const userController = {
   updateUser (req, res) {
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      body, {runValidators: true, new: true}
+      { $set: req.body},
+      { new: true}
     )
       .then((user) =>
         !user
@@ -52,17 +53,26 @@ const userController = {
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with that ID' })
-          : Thought.deleteMany({ _id: { $in: user.thought } })
+          : Thought.deleteMany(
+            { username: user.userman },
+            { new: true})
       )
-      .then(() => res.json({ message: 'User and associated apps deleted!' }))
-      .catch((err) => res.status(500).json(err));
+      .then((thought) => 
+        !thought
+          ? res.status(404).json({ message: 'User deleted, but no thoughts found!'})
+          : res.json({ message: "'User and associated apps deleted!'"})
+      )
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json(err);
+      });
   },
 
   // Post to add a new friend 
-  addFriend( req, res) {
+  createFriend( req, res) {
       User.findOneAndUpdate(
         { _id: req.params.userId },
-        { $push: { friends: params.friendID }},
+        { $push: { friends: req.params.friendID }},
         { runValidators: true, new: true }
       )
         .then((user) =>
@@ -75,8 +85,27 @@ const userController = {
     .catch((err) => res.status(500).json(err));
     },
   
-  }
+  
   // Delete to remove friend 
+  removeFriend( req, res) {
+    User.findOneAndUpdate(
+      {_id: req.body.friendId},
+      { $pull: { friends: { friendId: req.params.friendId } }},
+      { runValidators: true, new:true }
+    )
+    .then((user) => {
+      !user
+        ? res.status(404).json({ message: 'No friends with this id!' })
+        : res.json(user);
+      })
+    .catch ((err) => {
+      console.log(err);
+      res.status(500).json(err);
+    }); 
+  }, 
+};
+
+module.exports = userController;
 
 
 

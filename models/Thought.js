@@ -1,5 +1,5 @@
 const { Schema, model } = require("mongoose");
-// const dateFormat = require("../utils/dateFormat");
+const dayjs = require('dayjs');
 
 const reactionSchema = new Schema( 
     { 
@@ -19,8 +19,8 @@ const reactionSchema = new Schema(
       },
       createdAt:{
         type: Date,
-        default: Date.now,
-        get: (time) => format_date(time)
+        default: dayjs(),
+        get: value => dayjs(value).format('MMM DD, YYYY [at] hh:mm a')
       },
     },
     {
@@ -40,7 +40,9 @@ const thoughtSchema = new Schema(
       maxlength: 280,
     },
     createdAt: {
-
+      type: Date,
+      default: dayjs(),
+      get: value => dayjs(value).format('MMM DD, YYYY [at] hh:mm a')
     },
     username: {
       type: String,
@@ -58,7 +60,7 @@ const thoughtSchema = new Schema(
 
 
 thoughtSchema.virtual("reactionCount").get(function () {
-    return this.reactions.length;
+  return this.reactions.length;
 });
 
 const Thought = model("Thought", thoughtSchema);
